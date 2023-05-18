@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sentiment Analysis</title>
+    <style>
+        body {
+            background: url({{ url_for('static', filename='images/animecloud.png') }}) no-repeat center center fixed;
+            background-size: cover;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            font-size: 3em;
+        }
+        .dark-mode {
+            background-color: #333;
+            color: white;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 15px;
+        }
+        textarea {
+            width: 400px;
+            height: 100px;
+            margin-bottom: 20px;
+        }
+        .toggle-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 0.4em;
+            padding: 10px;
+        }
+        .user-search-button {
+            position: absolute;
+            top: 80px;
+            right: 10px;
+            font-size: 0.6em;
+            padding: 10px;
+        }
+        .search-reddit-user {
+            position: absolute;
+            top: 140px;
+            right: 10px;
+            font-size: 0.4em;
+        }
+        .reddit-posts {
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            max-width: 25%;
+            padding: 20px;
+            background-color: rgba(255, 255, 255, 0.8);
+            border-radius: 15px;
+            font-size: 0.4em;
+            display: none;
+        }
+        img {
+            width: 300px;
+            height: auto;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <button class="toggle-button" onclick="toggleDarkMode()">Toggle Dark Mode</button>
+    <button class="user-search-button" onclick="toggleUserSearch()">User Search</button>
+    <div class="search-reddit-user" style="display: none;">
+        <input id="username" type="text" placeholder="Reddit Username">
+        <button onclick="searchUser()">Search User</button>
+        <button onclick="clearPosts()">Clear Posts</button>
+    </div>
+    <div class="reddit-posts">
+        <ul id="posts"></ul>
+    </div>
+    <audio autoplay loop>
+        <source src="{{ url_for('static', filename='audio/background.mp3') }}" type="audio/mpeg">
+    </audio>
+    <form action="/predict" method="POST">
+        <img src="{{ url_for('static', filename='images/cutegirlreading.png') }}" alt="Character Image">
+        <textarea name="tweet" placeholder="Enter your tweet"></textarea>
+        <button type="submit">Predict</button>
+    </form>
+    <script>
+        function toggleDarkMode() {
+            var element = document.body;
+            element.classList.toggle("dark-mode");
+        }
+        function toggleUserSearch() {
+            var userSearch = document.querySelector('.search-reddit-user');
+            userSearch.style.display = userSearch.style.display === 'none' ? 'block' : 'none';
+        }
+        async function searchUser() {
+        var username = document.getElementById('username').value;
+        let response = await fetch('/search_user', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `username=${username}`
+        });
+        let posts = await response.json();
+        var postsElement = document.getElementById('posts');
+        postsElement.innerHTML = '';
+        for (let post of posts) {
+            let sentiment = await getSentiment(post.content);
+            let li = document.createElement('li');
+            li.innerHTML = `${post.title}: ${post.content} <span style="color: ${sentiment === 'Positive' ? 'blue' : 'orange'};">[${sentiment}]</span>`;
+            postsElement.appendChild(li);
+        }
+        document.querySelector('.reddit-posts').style.display = 'block';
+    }
+    async function getSentiment(text) {
+        let response = await fetch('/get_sentiment', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: `text=${text}`
+        });
+        let result = await response.json();
+        return result.sentiment;
+    }
+        function clearPosts() {
+            document.querySelector('.reddit-posts').style.display = 'none';
+            document.getElementById('posts').innerHTML = '';
+        }
+    </script>
+</body>
+</html>
