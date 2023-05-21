@@ -3,6 +3,7 @@ Practice with Semantic Analysis for tweet curation and user identification, made
 
 
 
-https://github.com/desuqcafe/Cute-SemanticAnalysis-Tweet-Curator/assets/120336423/5d17b4e2-5737-4879-af49-e1f8a7263c80
+![negezgif com-video-to-gif](https://github.com/desuqcafe/Cute-SemanticAnalysis-Tweet-Curator/assets/120336423/26d6143b-b1b5-4755-b2f2-46690dedc205)
+
 
 ![ezgif com-video-to-gif](https://github.com/desuqcafe/Cute-SemanticAnalysis-Tweet-Curator/assets/120336423/5e946354-253f-4232-a393-0975ccfb91bb)
