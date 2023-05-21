@@ -13,8 +13,8 @@
             font-size: 3em;
         }
         .dark-mode {
-            background-color: #333;
-            color: white;
+            background: url({{ url_for('static', filename='images/dark-background.png') }}) no-repeat center center fixed;
+            background-size: cover;
         }
         form {
             display: flex;
@@ -36,6 +36,25 @@
             font-size: 0.4em;
             padding: 10px;
         }
+        .toggle-info-button {
+            position: absolute;
+            top: 180px;
+            right: 10px;
+            font-size: 0.6em;
+            padding: 10px;
+        }
+        .info-bubble {
+            padding: 5px;
+            background-color: rgba(230, 230, 230, 0.9);
+            border-radius: 10px;
+            font-size: 0.5em;
+            margin-top: 5px;
+        }
+        .info-container {
+            position: absolute;
+            top: 240px; /* Update the top position to be below the Toggle Info button */
+            right: 20px;
+        }
         .user-search-button {
             position: absolute;
             top: 80px;
@@ -55,11 +74,30 @@
             top: 50%;
             transform: translateY(-50%);
             max-width: 25%;
-            padding: 20px;
-            background-color: rgba(255, 255, 255, 0.8);
             border-radius: 15px;
             font-size: 0.4em;
             display: none;
+        }
+        .bubble-container {
+            display: inline-flex;
+            align-items: center; /* Add this line to vertically align the bubbles */
+            margin-bottom: 10px;
+        }
+        .comment-bubble {
+            display: inline-block;
+            padding: 10px;
+            background-color: rgba(230, 230, 230, 0.90);
+            border-radius: 15px;
+            max-width: 60ch; /* Adjust this value based on your desired character count per line */
+            word-wrap: break-word; /* Add this line to break long words at the edge of the container */
+        }
+        .sentiment-bubble {
+            display: inline-block;
+            padding: 5px;
+            background-color: rgba(245, 245, 245, 0.90);
+            border-radius: 15px;
+            margin-left: 10px;
+            min-width: fit-content; /* Add this line to make the bubble wrap around the text */
         }
         img {
             width: 300px;
@@ -79,6 +117,12 @@
     <div class="reddit-posts">
         <ul id="posts"></ul>
     </div>
+    <button class="toggle-info-button" onclick="toggleInfoBubble()">Toggle Info</button>
+    <div class="info-container">
+        <div class="info-bubble" style="display: none;">
+            This is a machine learning model with 72% accuracy
+        </div>
+    </div>
     <audio autoplay loop>
         <source src="{{ url_for('static', filename='audio/background.mp3') }}" type="audio/mpeg">
     </audio>
@@ -88,6 +132,13 @@
         <button type="submit">Predict</button>
     </form>
     <script>
+        function truncateWords(content, wordLimit) {
+            const words = content.split(' ');
+            if (words.length > wordLimit) {
+                return words.slice(0, wordLimit).join(' ') + '...';
+            }
+            return content;
+        }
         function toggleDarkMode() {
             var element = document.body;
             element.classList.toggle("dark-mode");
@@ -96,26 +147,52 @@
             var userSearch = document.querySelector('.search-reddit-user');
             userSearch.style.display = userSearch.style.display === 'none' ? 'block' : 'none';
         }
-        async function searchUser() {
-        var username = document.getElementById('username').value;
-        let response = await fetch('/search_user', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded'
-            },
-            body: `username=${username}`
-        });
-        let posts = await response.json();
-        var postsElement = document.getElementById('posts');
-        postsElement.innerHTML = '';
-        for (let post of posts) {
-            let sentiment = await getSentiment(post.content);
-            let li = document.createElement('li');
-            li.innerHTML = `${post.title}: ${post.content} <span style="color: ${sentiment === 'Positive' ? 'blue' : 'orange'};">[${sentiment}]</span>`;
-            postsElement.appendChild(li);
+        function toggleInfoBubble() {
+            var infoBubble = document.querySelector('.info-bubble');
+            infoBubble.style.display = infoBubble.style.display === 'none' ? 'block' : 'none';
         }
-        document.querySelector('.reddit-posts').style.display = 'block';
-    }
+        async function searchUser() {
+            var username = document.getElementById('username').value;
+            let response = await fetch('/search_user', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                },
+                body: `username=${username}`
+            });
+            let posts = await response.json();
+            var postsElement = document.getElementById('posts');
+            postsElement.innerHTML = '';
+            for (let post of posts) {
+                let sentiment = await getSentiment(post.content);
+                let li = document.createElement('li');
+
+                // Create a container div
+                let containerDiv = document.createElement('div');
+                containerDiv.classList.add('bubble-container');
+
+                // Create and add the comment bubble to container div
+                let commentDiv = document.createElement('div');
+                commentDiv.classList.add('comment-bubble');
+
+                // Truncate the content to a maximum of 30 words (or any desired limit)
+                const truncatedContent = truncateWords(post.content, 30);
+
+                commentDiv.innerText = `${post.title}: ${truncatedContent}`;
+                containerDiv.appendChild(commentDiv);
+
+                // Create and add the sentiment bubble to container div
+                let sentimentDiv = document.createElement('div');
+                sentimentDiv.classList.add('sentiment-bubble');
+                sentimentDiv.innerText = sentiment;
+                sentimentDiv.style.color = sentiment === 'Positive' ? '#0047AB' : '#FF4F00';
+                containerDiv.appendChild(sentimentDiv);
+
+                li.appendChild(containerDiv);
+                postsElement.appendChild(li);
+            }
+            document.querySelector('.reddit-posts').style.display = 'block';
+        }
     async function getSentiment(text) {
         let response = await fetch('/get_sentiment', {
             method: 'POST',

@@ -78,7 +78,7 @@ def predict():
         features = vectorizer.transform([preprocessed_text])
         prediction = model.predict(features)
         sentiment = "Positive" if prediction[0] == 1 else "Negative"
-        return render_template('result.html', sentiment=sentiment)
+        return render_template('result.html', sentiment=sentiment, tweet=text) # Pass the tweet text to the template
     
 @app.route('/get_sentiment', methods=['POST'])
 def get_sentiment():
